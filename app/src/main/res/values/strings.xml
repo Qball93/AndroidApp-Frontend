@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">AndroidEventApp</string>
+    <string name="TitleText">Plataforma de Reportaje</string>
+    <string name="loginEmail">Correo Electronico</string>
+    <string name="loginPassword">Contraseña</string>
+    <string name="loginButton">Inicio</string>
+    <string name="backEndHost">http://10.0.2.2:8000/</string>
+</resources>
