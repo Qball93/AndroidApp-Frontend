@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
     }
 
 
@@ -51,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         return if(android.util.Patterns.EMAIL_ADDRESS.matcher(emailText).matches()){
             true;
         } else{
+
             Toast.makeText(this,"Porfavor ingrese un correo electronico valido",Toast.LENGTH_SHORT).show();
             //Log.i("message",emailText)
             false;
@@ -63,8 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         var url: String = getString(R.string.backEndHost) + "usuarios/token/"
 
-        //var userInfo = JSONObject("{email:"+emailEditText.text.toString()+",password:"+passEditText.text.toString()+"}")
-        //TODO find a way to this in a less convoluted way
+
 
         var body: RequestBody = FormBody.Builder()
             .add("username",emailEditText)
@@ -85,7 +86,6 @@ class MainActivity : AppCompatActivity() {
                     if(response.isSuccessful){
                         new = JSONObject(response.body!!.string())
 
-                        Log.i("asdsad","idk man your response worked")
                         val preferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
                         preferences.edit().putString("token", new.get("token").toString()).apply()
                         preferences.edit().putString("admin",new.get("admin").toString()).apply()

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_user"
+        android:icon="@drawable/ic_group_24px"
+        android:title="@string/navUser" />
+    <item
+        android:id="@+id/nav_event"
+        android:icon="@drawable/ic_event_note_24px"
+        android:title="@string/navEvent" />
+    <item
+        android:id="@+id/nav_new_user"
+        android:icon="@drawable/ic_person_add_24px"
+        android:title="@string/navNewUser" />
+</menu>

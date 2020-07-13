@@ -5,4 +5,11 @@
     <string name="loginPassword">Contraseña</string>
     <string name="loginButton">Inicio</string>
     <string name="backEndHost">http://10.0.2.2:8000/</string>
+    <string name="navUser">Usuarios</string>
+    <string name="navEvent">Incidentes</string>
+    <string name="navNewUser">Nuevo Usuario</string>
+    <string name="buttonEditText">Editar </string>
+    <string name="buttonDeleteText">Eliminar </string>
+    <string name="buttonCreateUser">Crear Usuario</string>
+    <string name="buttonUpdateUser">Actualizar Usuario</string>
 </resources>
