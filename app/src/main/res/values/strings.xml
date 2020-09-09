@@ -12,4 +12,5 @@
     <string name="buttonDeleteText">Eliminar </string>
     <string name="buttonCreateUser">Crear Usuario</string>
     <string name="buttonUpdateUser">Actualizar Usuario</string>
+    <string name="noChangePass">samepassword123idk</string>
 </resources>

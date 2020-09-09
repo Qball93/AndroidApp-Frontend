@@ -177,6 +177,13 @@
                 android:layout_weight="1"
                 android:text="Administrador" />
 
+            <CheckBox
+                android:id="@+id/is_active"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Activo" />
+
             <Button
                 android:id="@+id/buttonInput"
                 android:layout_width="wrap_content"

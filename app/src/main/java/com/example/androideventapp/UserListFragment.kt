@@ -16,11 +16,13 @@ import kotlinx.android.synthetic.main.user_list_fragment.*
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
+import kotlin.properties.Delegates
 
 
 class UserListFragment : Fragment() {
     //private var userList = JsonArray()
     lateinit var textView: TextView
+    private var updatePosition by Delegates.notNull<Int>()
 
 
     override fun onCreateView(
@@ -40,7 +42,6 @@ class UserListFragment : Fragment() {
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        usersRecyclerView.layoutManager = LinearLayoutManager(activity?.applicationContext)
 
 
 
@@ -59,6 +60,8 @@ class UserListFragment : Fragment() {
 
             var inputButton: Button = popupView.findViewById<Button>(R.id.buttonInput)
             inputButton.setText("Crear")
+
+            popupView.findViewById<CheckBox>(R.id.is_active).visibility = View.GONE
 
             inputButton.setOnClickListener {
 
@@ -116,7 +119,6 @@ class UserListFragment : Fragment() {
                                 response.use {
                                     var new = JSONObject(response.body!!.string())
 
-
                                     if (response.isSuccessful) {
 
                                         activity?.runOnUiThread {
@@ -126,20 +128,31 @@ class UserListFragment : Fragment() {
 
                                             clearChildren(group)
 
+                                            var tempUser = JSONObject(new.toString())
 
-                                            usersRecyclerView.adapter?.notifyDataSetChanged()
+                                            tempUser.put("events",0)
+                                                .put("last_login",null)
+                                                .put("expanded", false)
+                                                .put("is_active",true)
 
+                                            val gson = GsonBuilder().create()
+                                            val newUser: User = gson.fromJson(tempUser.toString(),User::class.java)
+
+                                            (usersRecyclerView.adapter as UsersListAdapter).addItem(newUser)
+                                            (usersRecyclerView.adapter as UsersListAdapter).notifyItemInserted(
+                                                usersRecyclerView.adapter!!.itemCount)
 
                                             customDialogue(
                                                 activity!!,
                                                 "Usuario creado exitosamente.",
+
                                                 "success"
                                             )
                                         }
-                                    } else if (new.has("detail")) {
+                                    }
+                                    else if (new.has("detail")) {
 
                                         activity?.runOnUiThread {
-
 
                                             customDialogue(
                                                 activity!!,
@@ -147,8 +160,8 @@ class UserListFragment : Fragment() {
                                                 "error"
                                             )
                                         }
-
-                                    } else {
+                                    }
+                                    else {
                                         var returnString: String? = ""
                                         if (new.has("email")) {
                                             returnString += new.getJSONArray("email")[0].toString() + "\n"
@@ -202,14 +215,96 @@ class UserListFragment : Fragment() {
                     val body = response.body!!.string()
 
                     val gson = GsonBuilder().create()
-                    val Usuarios: Array<User> = gson.fromJson(
+                    /*val Usuarios: MutableList<User> = gson.fromJson(
                         body,
-                        Array<User>::class.java
-                    )
+                        UserFeed::class.java
+                    )*/
+                    val Usuarios = gson.fromJson(body, Array<User>::class.java).toMutableList()
 
 
                     activity?.runOnUiThread {
-                        usersRecyclerView.adapter = UsersListAdapter(Usuarios)
+
+                        usersRecyclerView.adapter = UsersListAdapter(Usuarios, this@UserListFragment , object : UsersListAdapter.ItemClickListener{
+                            override fun itemClick(user: User, position: Int) {
+                                var currentUserEmail :String = "testemail@email.com"
+
+                                var popupView: View = layoutInflater.inflate(R.layout.create_user_window, null)
+
+                                var width: Int = 900;
+                                var height: Int = LinearLayout.LayoutParams.WRAP_CONTENT;
+                                var focusable: Boolean = true;
+                                var popup = PopupWindow(popupView,width,height,focusable)
+
+                                popup.showAtLocation(view, Gravity.CENTER,0,100)
+
+                                var inputButton: Button = popupView.findViewById<Button>(R.id.buttonInput)
+                                inputButton.text = "Editar"
+
+                                var editNombre : EditText = popupView.findViewById<EditText>(R.id.editTextNombre)
+                                editNombre.setText(user.nombre)
+
+                                var editApellido : EditText = popupView.findViewById<EditText>(R.id.editTextApellido)
+                                editApellido.setText(user.apellido)
+
+                                var editEmail: EditText = popupView.findViewById<EditText>(R.id.editTextEmail)
+                                editEmail.setText(user.email)
+
+                                var editPhone: EditText = popupView.findViewById<EditText>(R.id.editTextTelephone)
+                                editPhone.setText(user.telefono)
+
+                                var editPassword: EditText = popupView.findViewById<EditText>(R.id.editTextPassword1)
+                                editPassword.setText("samepassiuj")
+
+                                var editPassword2: EditText = popupView.findViewById<EditText>(R.id.editTextPassword2)
+                                editPassword2.setText("samepassiuj")
+
+                                var adminCheck : CheckBox = popupView.findViewById<CheckBox>(R.id.adminBox)
+                                var activeCheck : CheckBox = popupView.findViewById<CheckBox>(R.id.is_active)
+
+                                if(user.email == currentUserEmail){
+                                    adminCheck.isChecked = true
+                                    adminCheck.isClickable = false
+                                    activeCheck.isChecked = true
+                                    activeCheck.isClickable = false
+                                }
+
+                                inputButton.setOnClickListener{
+                                    if (validateEmail(editEmail) and
+                                        validatePhone(editPhone) and
+                                        validateNoEmptySpaces(editNombre) and
+                                        validateNoEmptySpaces(editApellido) and
+                                        validateIsEmpty(editPassword) and
+                                        validateIsEmpty(editPassword2)
+                                    ) {
+                                        if (editPassword.text.toString() != editPassword2.text.toString()) {
+                                            customDialogue(activity!!, "Contrasenas no son iguales", "alert")
+                                        }else{
+                                            updateUser(editEmail.text.toString(),editPassword.text.toString(),editNombre.text.toString(),adminCheck.isChecked,
+                                                activeCheck.isChecked, editPhone.text.toString(), editApellido.text.toString(),user.id, popupView, position){
+                                                    res ->     (usersRecyclerView.adapter as UsersListAdapter).replaceItem(res,updatePosition)
+                                                activity?.runOnUiThread{
+                                                    popup.dismiss()
+                                                    (usersRecyclerView.adapter as UsersListAdapter).notifyItemChanged(updatePosition)
+                                                }
+
+
+                                            }
+
+
+                                        }
+                                    }
+                                }
+                            }
+                        })
+
+                        (usersRecyclerView.adapter as UsersListAdapter).setAppContext(activity!!.applicationContext)
+                        this@UserListFragment.activity?.let { it1 ->
+                            (usersRecyclerView.adapter as UsersListAdapter).setActivContext(
+                                it1
+                            )
+                        }
+
+                        usersRecyclerView.layoutManager = LinearLayoutManager(activity?.applicationContext)
                     }
 
                 }
@@ -218,11 +313,66 @@ class UserListFragment : Fragment() {
 
     }
 
+    fun updateUser(email: String, password: String, nombre: String, admin: Boolean, active: Boolean,
+                   telefono: String, apellido: String, userId: Int, mainView: View, position: Int, then: ((User) -> Unit)) {
+
+        var url: String = activity!!.getString(R.string.backEndHost) +"usuarios/update/" + userId + "/"
+        val client = OkHttpClient()
+
+
+        updatePosition = position
+        val myBuilder: FormBody.Builder = FormBody.Builder()
+
+        myBuilder.add("email",email)
+            .add("telefono", "+$telefono")
+            .add("apellido",apellido)
+            .add("is_admin",admin.toString())
+            .add("is_active",active.toString())
+            .add("nombre",nombre)
+
+        if(password != activity!!.getString(R.string.noChangePass)){
+            myBuilder.add("password",password)
+        }
+
+        var body: FormBody = myBuilder.build()
+
+        var request = Request.Builder().url(url).header(
+            "Authorization",
+            "Token b29d64a6178158d6a7fa0b2d5f49e109d28358e2"
+        ).patch(body).build()
+
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    //println(response.body!!.string())
+
+                    var new = JSONObject(response.body!!.string())
+
+                    if (response.isSuccessful) {
+
+                        var tempUser = JSONObject(new.toString())
+
+                        val gson = GsonBuilder().create()
+                        val res: User = gson.fromJson(tempUser.toString(),User::class.java)
+                        then(res)
+
+                        //tempUser.put()
+                    }
+                }
+            }
+        })
+
+    }
 
 }
 
 
 
 
-class HomeFeed(val users: List<User>)
+class UserFeed(val users: MutableList<User>)
 
