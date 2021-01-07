@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3ba8ba</color>
-    <color name="colorPrimaryDark">#1ba4ba</color>
-    <color name="colorAccent">#03DAC5</color>
+    <color name="colorPrimary">#17639F</color>
+    <color name="colorPrimaryDark">#343157</color>
+    <color name="colorAccent">#ffa53f</color>
     <color name="successColor">#28a745</color>
     <color name="warningColor">#E6BE03</color>
     <color name="errorColor">#DA5F6A</color>
@@ -10,4 +10,5 @@
     <color name="colorWhiteTransparent">#80ffff</color>
     <color name="textLabelField">#000000</color>
     <color name="textInputField">#000000</color>
+    <color name="iconMenuColors">#FFFFFF</color>
 </resources>

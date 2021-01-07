@@ -1,6 +1,8 @@
 package com.example.androideventapp
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -23,6 +25,8 @@ class UserListFragment : Fragment() {
     //private var userList = JsonArray()
     lateinit var textView: TextView
     private var updatePosition by Delegates.notNull<Int>()
+    private lateinit var sharedPrefs: SharedPreferences
+    private lateinit var Token: String
 
 
     override fun onCreateView(
@@ -106,7 +110,7 @@ class UserListFragment : Fragment() {
                         var request = Request.Builder().url(url)
                             .header(
                                 "Authorization",
-                                "Token b29d64a6178158d6a7fa0b2d5f49e109d28358e2"
+                                getString(R.string.Token)
                             )
                             .post(body).build()
 
@@ -199,8 +203,10 @@ class UserListFragment : Fragment() {
         var url: String = getString(R.string.backEndHost) + "usuarios/all/"
         val client = OkHttpClient()
         val myString: String
-        //Token for testing purposes 
-        var request = Request.Builder().url(url).header("Authorization","Token b29d64a6178158d6a7fa0b2d5f49e109d28358e2").build()
+        //Token for testing purposes
+        sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
+        Token = "Token " + sharedPrefs.getString("token","token")
+        var request = Request.Builder().url(url).header("Authorization",getString(R.string.Token)).build()
 
 
         client.newCall(request).enqueue(object : Callback {
@@ -284,6 +290,8 @@ class UserListFragment : Fragment() {
                                                     res ->     (usersRecyclerView.adapter as UsersListAdapter).replaceItem(res,updatePosition)
                                                 activity?.runOnUiThread{
                                                     popup.dismiss()
+                                                    println("change made")
+                                                    customDialogue(activity!!,"Usuario Editado","success")
                                                     (usersRecyclerView.adapter as UsersListAdapter).notifyItemChanged(updatePosition)
                                                 }
 
@@ -319,6 +327,9 @@ class UserListFragment : Fragment() {
         var url: String = activity!!.getString(R.string.backEndHost) +"usuarios/update/" + userId + "/"
         val client = OkHttpClient()
 
+        sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
+        Token = "Token " + sharedPrefs.getString("token","token")
+
 
         updatePosition = position
         val myBuilder: FormBody.Builder = FormBody.Builder()
@@ -338,7 +349,7 @@ class UserListFragment : Fragment() {
 
         var request = Request.Builder().url(url).header(
             "Authorization",
-            "Token b29d64a6178158d6a7fa0b2d5f49e109d28358e2"
+            Token
         ).patch(body).build()
 
 

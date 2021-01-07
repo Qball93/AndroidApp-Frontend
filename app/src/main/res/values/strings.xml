@@ -13,4 +13,13 @@
     <string name="buttonCreateUser">Crear Usuario</string>
     <string name="buttonUpdateUser">Actualizar Usuario</string>
     <string name="noChangePass">samepassword123idk</string>
+    <string name="placeholderFullName">Primer Segundo</string>
+    <string name="placeholderEmail">Lorememail@ipsum.com</string>
+    <string name="menuIncident">Reportar Incidente</string>
+    <string name="menuConfig">Configuraciones de Usuario</string>
+    <string name="open">Abierto</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="close">Cerrado</string>
+    <string name="Token">Token b29d64a6178158d6a7fa0b2d5f49e109d28358e2</string>
 </resources>

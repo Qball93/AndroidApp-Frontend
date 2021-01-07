@@ -1,4 +1,4 @@
-package com.example.androideventapp
+package com.example.androideventapp.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.example.androideventapp.R
 
 class NewUserFragment: Fragment() {
     lateinit var textView: TextView

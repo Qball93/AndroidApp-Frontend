@@ -1,57 +1,80 @@
 package com.example.androideventapp
 
 
-import android.content.Context
 import android.os.Bundle
-import android.view.View
-import android.widget.FrameLayout
+import android.view.MenuItem
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import com.example.androideventapp.fragments.EventManagementFragment
+import com.example.androideventapp.fragments.NewUserFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import okhttp3.*
-import java.io.IOException
+import kotlinx.android.synthetic.main.admin_main.*
+import kotlinx.android.synthetic.main.user_main.*
 
 class AdminMenu : AppCompatActivity(){
 
 
-
-
-
     private val fragmentManager = supportFragmentManager
     private val userFragment = UserListFragment()
-    private val eventFragment = EventListFragment()
+    private lateinit var toggle: ActionBarDrawerToggle
+    private lateinit var drawer: DrawerLayout
+    private val eventFragment = EventManagementFragment()
     private val newUserFragment = NewUserFragment()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.admin_menu)
+        setContentView(R.layout.admin_main)
 
-        val navigationView: BottomNavigationView = findViewById<BottomNavigationView>(R.id.navigationView)
-        //val mainFrame: FrameLayout = findViewById<FrameLayout>(R.id.mainLayout)
+
+
+        val toolbar : Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        drawer = findViewById(R.id.user_drawer_layout)
+
+        toggle  = ActionBarDrawerToggle(
+            this,
+            drawer,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+        drawer.addDrawerListener(toggle)
+        toggle.syncState()
+
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         /* Display First Fragment initially */
         val fragmentTransaction = fragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.mainLayout, userFragment)
+        fragmentTransaction.replace(R.id.fragment_container, userFragment)
         fragmentTransaction.commit()
 
-        navigationView.setOnNavigationItemSelectedListener {item ->
+        nav_view_admin.setNavigationItemSelectedListener {item ->
+
+            var size: Int = nav_view_admin.menu.size()
+
+            for (i in 0 until size) {
+                nav_view_admin.menu.getItem(i).isChecked = false
+            }
+
+
             when (item.itemId){
                 R.id.nav_user -> {
                     item.isChecked = true
                     setFragment(userFragment)
-                    true
                 }
                 R.id.nav_event -> {
                     //navigationView.itemBackgroundResource = R.color.colorPrimaryDark
                     item.isChecked = true
                     setFragment(eventFragment)
-                    true
                 }
                 R.id.nav_new_user -> {
                     //navigationView.itemBackgroundResource = R.color.colorPrimaryDark
                     item.isChecked = true
                     setFragment(newUserFragment)
-                    true
                 }
             }
             false
@@ -74,8 +97,16 @@ class AdminMenu : AppCompatActivity(){
 
     private fun setFragment(fragment: Fragment) {
         val fragmentTransaction = fragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.mainLayout, fragment)
+        fragmentTransaction.replace(R.id.fragment_container, fragment)
         fragmentTransaction.commit()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+
+        if(toggle.onOptionsItemSelected(item)){
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
 

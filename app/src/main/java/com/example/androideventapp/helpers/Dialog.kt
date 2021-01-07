@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.EditText
 import com.example.androideventapp.R
+import com.example.androideventapp.fragments.UserSettingsFragment
 import kotlinx.android.synthetic.main.alert_dialog_error.view.*
 
 

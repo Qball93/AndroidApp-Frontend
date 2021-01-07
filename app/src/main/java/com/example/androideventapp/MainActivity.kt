@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                         new = JSONObject(response.body!!.string())
 
                         val preferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-                        preferences.edit().putString("token", new.get("token").toString()).apply()
+                        preferences.edit().putString("token", "Token " + new.get("token").toString()).apply()
                         preferences.edit().putString("admin",new.get("admin").toString()).apply()
 
                         if(new.get("admin").toString().toBoolean()){
