@@ -99,10 +99,14 @@ class UserSettingsFragment(): Fragment() {
 
     fun setMenu(updateUser: User) {
 
-        activity?.findViewById<EditText>(R.id.userConfigNameText)!!.setText(updateUser.nombre)
-        activity?.findViewById<EditText>(R.id.userConfigApellidoText)!!.setText(updateUser.apellido)
-        activity?.findViewById<EditText>(R.id.userConfigPhoneTexxt)!!.setText(updateUser.telefono)
-        activity?.findViewById<EditText>(R.id.userConfigemailText)!!.setText(updateUser.email)
+        activity?.runOnUiThread{
+
+            activity?.findViewById<EditText>(R.id.userConfigNameText)!!.setText(updateUser.nombre)
+            activity?.findViewById<EditText>(R.id.userConfigApellidoText)!!.setText(updateUser.apellido)
+            activity?.findViewById<EditText>(R.id.userConfigPhoneTexxt)!!.setText(updateUser.telefono)
+            activity?.findViewById<EditText>(R.id.userConfigemailText)!!.setText(updateUser.email)
+        }
+
 
     }
 

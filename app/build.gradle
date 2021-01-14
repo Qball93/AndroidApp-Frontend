@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.androideventapp"
-        minSdkVersion 27
+        minSdkVersion 24
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -26,6 +26,7 @@ android {
 }
 
 dependencies {
+
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0'
@@ -46,4 +47,7 @@ dependencies {
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:4.7.2'
     implementation 'com.google.code.gson:gson:2.8.6'
+    compile 'com.android.support:multidex:1.0.1'
+    compile 'lib.kashif:folderpicker:2.4'
+    implementation 'com.github.codekidX:storage-chooser:2.0.4.4'
 }

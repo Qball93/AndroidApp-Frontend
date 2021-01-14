@@ -76,30 +76,33 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        fetchTypes(requireActivity()){ tipos->
+        fetchTypes(requireActivity(),"true"){ tipos->
 
-            val mySpinner: Spinner = activity?.findViewById<Spinner>(R.id.spinner)!!
-
-
-
-            val spinnerAdapter : ArrayAdapter<EventType> = ArrayAdapter<EventType>(
-                this.context,
-                android.R.layout.simple_spinner_item,
-                tipos
-            )
-            spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            activity?.runOnUiThread {
+                val mySpinner: Spinner = activity?.findViewById<Spinner>(R.id.spinner)!!
 
 
-            mySpinner.adapter = spinnerAdapter
 
-            btReport.setOnClickListener {
+                val spinnerAdapter : ArrayAdapter<EventType> = ArrayAdapter<EventType>(
+                    this.context,
+                    android.R.layout.simple_spinner_item,
+                    tipos
+                )
+                spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
 
-                createEvent(requireActivity(),latitude,longitude,tipos[mySpinner.selectedItemPosition].id){
+                mySpinner.adapter = spinnerAdapter
+
+                btReport.setOnClickListener {
 
 
-                    requireActivity().runOnUiThread {
-                        customDialogue(requireActivity(),"Evento Creado con Exito", "success") }
+                    createEvent(requireActivity(),latitude,longitude,tipos[mySpinner.selectedItemPosition].id){
+
+
+                        requireActivity().runOnUiThread {
+                            customDialogue(requireActivity(),"Evento Creado con Exito", "success") }
+                    }
+
                 }
 
             }
@@ -171,7 +174,7 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
 
 
         if (lm != null) {
-            while (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+            if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 !lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
             ) {
                 // Build the alert dialog
@@ -186,12 +189,11 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
                 val alertDialog: Dialog = builder.create()
                 alertDialog.setCanceledOnTouchOutside(false)
                 alertDialog.show()
+            }else{
+
+                fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+                getLastLocation(mMap)
             }
-
-            fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-            getLastLocation(mMap)
-
-
 
         }
     }

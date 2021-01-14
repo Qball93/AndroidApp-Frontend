@@ -28,5 +28,17 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_search_24px" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/excelButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="100dp"
+        android:layout_marginTop="24dp"
+        android:clickable="true"
+        app:backgroundTint="@color/successColor"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_grid_on_24px" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

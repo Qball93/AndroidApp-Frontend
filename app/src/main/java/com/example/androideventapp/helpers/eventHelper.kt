@@ -10,8 +10,17 @@ import okhttp3.*
 import java.io.IOException
 
 
-fun fetchTypes(context: Context, then: ((MutableList<EventType>) -> Unit)){
+fun fetchTypes(context: Context,flag: String?, then: ((MutableList<EventType>) -> Unit)){
+
+
     var url: String = context.getString(R.string.backEndHost) + "events/getTypes"
+
+    if(flag == "false"){
+        url+= "/?Activo=false"
+    }
+    if(flag == "true"){
+        url += "/?Activo=true"
+    }
 
     val client = OkHttpClient()
     var sharedPrefs : SharedPreferences = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
@@ -82,7 +91,6 @@ fun createEvent(context: Context, latitude: String, longitude: String, eventType
                 val body = response.body!!.string()
 
 
-                then("sadadas")
 
             }
         }
@@ -91,4 +99,83 @@ fun createEvent(context: Context, latitude: String, longitude: String, eventType
 
 
 
+}
+
+fun changeTypeStatus(context: Context,id: Int, status: String, then: ((String) -> Unit)){
+
+
+
+    var url: String = context.getString(R.string.backEndHost) + "events/update/"+id
+
+
+    val client = OkHttpClient()
+    var sharedPrefs : SharedPreferences = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
+    var token: String = sharedPrefs.getString("token","token")
+
+    var body: RequestBody = FormBody.Builder()
+        .add("Activo",status).build()
+
+
+    var request = Request.Builder().url(url).header(
+        "Authorization",
+        token
+    ).patch(body).build()
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            e.printStackTrace()
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            response.use {
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                val body = response.body!!.string()
+
+
+
+                then("success")
+
+            }
+        }
+    })
+}
+
+fun createNewType(context: Context, color: String, name: String, then: ((String) -> Unit)){
+    var url: String = context.getString(R.string.backEndHost) + "events/tiposEvents/"
+
+
+    val client = OkHttpClient()
+    var sharedPrefs : SharedPreferences = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
+    var token: String = sharedPrefs.getString("token","token")
+
+    var body: RequestBody = FormBody.Builder()
+        .add("nombre",name)
+        .add("color",color)
+        .add("Activo","true").build()
+
+
+    var request = Request.Builder().url(url).header(
+        "Authorization",
+        token
+    ).patch(body).build()
+
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            e.printStackTrace()
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            response.use {
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                val body = response.body!!.string()
+
+
+                then("success")
+
+            }
+        }
+    })
 }

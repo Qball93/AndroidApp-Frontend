@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="Headers">
+        <item>ID Evento</item>
+        <item>Nombre Usuario</item>
+        <item>Correo Usuario</item>
+        <item>Latitud</item>
+        <item>Longitud</item>
+        <item>Tipo de Evento</item>
+        <item>Fecha Creado</item>
+    </string-array>
+</resources>

@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import com.example.androideventapp.fragments.AdminConfigFragment
 import com.example.androideventapp.fragments.EventManagementFragment
 import com.example.androideventapp.fragments.NewUserFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -22,7 +23,7 @@ class AdminMenu : AppCompatActivity(){
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var drawer: DrawerLayout
     private val eventFragment = EventManagementFragment()
-    private val newUserFragment = NewUserFragment()
+    private val adminConfigFragment = AdminConfigFragment()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,10 +72,10 @@ class AdminMenu : AppCompatActivity(){
                     item.isChecked = true
                     setFragment(eventFragment)
                 }
-                R.id.nav_new_user -> {
+                R.id.nav_configs -> {
                     //navigationView.itemBackgroundResource = R.color.colorPrimaryDark
                     item.isChecked = true
-                    setFragment(newUserFragment)
+                    setFragment(adminConfigFragment)
                 }
             }
             false

@@ -10,11 +10,7 @@
         android:icon="@drawable/ic_event_note_24px"
         android:title="@string/navEvent" />
     <item
-        android:id="@+id/nav_new_user"
-        android:icon="@drawable/ic_person_add_24px"
-        android:title="Reportes" />
-    <item
         android:id="@+id/nav_configs"
         android:icon="@drawable/ic_settings_24px"
-        android:title="Reportes" />
+        android:title="Configuraciones" />
 </menu>

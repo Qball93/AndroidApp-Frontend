@@ -1,11 +1,15 @@
 package com.example.androideventapp.fragments;
 
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.Resources
 import android.icu.text.DateFormat
 import android.icu.text.SimpleDateFormat
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -16,7 +20,6 @@ import com.example.androideventapp.CustomInfoWindowForGoogleMap
 import com.example.androideventapp.R
 import com.example.androideventapp.helpers.*
 import com.example.androideventapp.models.Event
-import com.example.androideventapp.models.EventType
 import com.example.androideventapp.models.SimpleUser
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -24,10 +27,21 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.*
+import kotlinx.android.synthetic.main.event_export_window.*
 import kotlinx.android.synthetic.main.event_filter_window.*
 import kotlinx.android.synthetic.main.event_management_fragment.*
 import kotlinx.android.synthetic.main.user_list_fragment.*
+import lib.folderpicker.FolderPicker
 import okhttp3.*
+import org.apache.poi.hssf.usermodel.HSSFCellStyle
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.hssf.util.HSSFColor
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.ss.usermodel.Sheet
+import org.apache.poi.ss.usermodel.Workbook
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.*
 
@@ -43,7 +57,7 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                 super.onActivityCreated(savedInstanceState)
 
                 sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
-                Token = "Token " + sharedPrefs.getString("token","")
+                Token = "Token " + sharedPrefs.getString("token", "")
 
 
                 map_view.onCreate(savedInstanceState)
@@ -60,11 +74,14 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
                 super.onViewCreated(view, savedInstanceState)
 
-                fetchTypes(requireActivity()) { Tipos ->
+                fetchTypes(requireActivity(),null) { Tipos ->
                         fetchSimpleUserList { Usuarios ->
                                 Usuarios.add(0, SimpleUser(null, "N/A", ""))
 
 
+
+
+                                
                                 filterButton.setOnClickListener {
 
                                         var counter: Int = 1
@@ -143,10 +160,11 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
 
 
                                         val spinnerAdapter : ArrayAdapter<SimpleUser> = ArrayAdapter<SimpleUser>(
-                                                this.context,
+                                                requireActivity(),
                                                 android.R.layout.simple_spinner_item,
                                                 Usuarios
                                         )
+
                                         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
                                         mySpinner.adapter = spinnerAdapter
@@ -279,8 +297,10 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                                                         eDate =
                                                                 "endDate=" + myFormat.format(endDate) + "&"
                                                 }
-                                                if(userId != null) {
+                                                if(userId != "null") {
                                                         userId = "User="+userId+"&"
+                                                }else{
+                                                        userId = null
                                                 }
                                                 fetchEventJson(
                                                         sDate,
@@ -331,6 +351,9 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
 
                 fetchEventJson(null, null, null, null){ Eventos  ->
 
+
+
+
                         createMarkers(Eventos, mMap)
                         activity?.runOnUiThread {
                                 mMap.setInfoWindowAdapter(
@@ -340,61 +363,19 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                         }
                 }
         }
-/*
-        fun fetchTypes(then: ((MutableList<EventType>) -> Unit)){
-                var url: String = getString(R.string.backEndHost) + "events/tiposEvent"
 
-                sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
-                Token = "Token " + sharedPrefs.getString("token","token")
-
-
-                val client = OkHttpClient()
-                val myString: String
-                //Token for testing purposes
-                var request = Request.Builder().url(url).header(
-                        "Authorization",
-                        Token
-                ).build()
-
-
-                client.newCall(request).enqueue(object : Callback {
-                        override fun onFailure(call: Call, e: IOException) {
-                                e.printStackTrace()
-                        }
-
-                        override fun onResponse(call: Call, response: Response) {
-                                response.use {
-                                        if (!response.isSuccessful) throw IOException("Unexpected code $response")
-
-                                        val body = response.body!!.string()
-
-                                        //println(body)
-                                        val gson = GsonBuilder().create()
-
-                                        val Tipos = gson.fromJson(
-                                                body,
-                                                Array<EventType>::class.java
-                                        ).toMutableList()
-
-                                        then(Tipos)
-
-                                }
-                        }
-                })
-        }
-*/
         fun fetchEventJson(
-                startDate: String?,
-                endDate: String?,
-                TipoEvento: String?,
-                userId: String?,
-                then: ((MutableList<Event>) -> Unit)
-        ){
+        startDate: String?,
+        endDate: String?,
+        TipoEvento: String?,
+        userId: String?,
+        then: ((MutableList<Event>) -> Unit)
+){
 
                 var url: String = getString(R.string.backEndHost) + "events/filteredEvents/?"+startDate+endDate+TipoEvento+userId
                 val client = OkHttpClient()
                 sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
-                Token = sharedPrefs.getString("token","token")
+                Token = sharedPrefs.getString("token", "token")
 
 
                 if(url.last() == '&'){
@@ -433,6 +414,127 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
         }
 
         fun createMarkers(mapEvents: MutableList<Event>, currentMap: GoogleMap){
+
+                excelButton.setOnClickListener {
+                        var popupView: View = layoutInflater.inflate(
+                                R.layout.event_export_window,
+                                null
+                        )
+
+
+                        var width: Int = 900;
+                        var height: Int = LinearLayout.LayoutParams.WRAP_CONTENT;
+                        var focusable: Boolean = true;
+                        var popup = PopupWindow(popupView, width, height, focusable)
+
+                        popup.showAtLocation(view, Gravity.CENTER, 0, 100)
+
+
+
+
+
+                        popupView.findViewById<Button>(R.id.btExport).setOnClickListener {
+
+                                var fileName: String = popupView.findViewById<EditText>(R.id.editTextTextPersonName).text.toString()
+
+                                if(fileName != "") {
+                                        val wb: Workbook = HSSFWorkbook()
+                                        var arrayIndex: Int = 0
+                                        var rowIndex: Int = 0
+
+
+                                        var cell: Cell? = null
+
+                                        val cellStyle = wb.createCellStyle()
+                                        cellStyle.fillForegroundColor = HSSFColor.LIGHT_BLUE.index
+                                        cellStyle.fillPattern = HSSFCellStyle.SOLID_FOREGROUND
+                                        var sheet: Sheet? = null
+                                        sheet = wb.createSheet("Lista de Eventos")
+                                        var row: Row = sheet.createRow(rowIndex)
+
+                                        val res: Resources = getResources()
+                                        val list: Array<String> =
+                                                res.getStringArray(R.array.Headers)
+
+                                        for (item in list) {
+                                                cell = row.createCell(arrayIndex)
+                                                cell.setCellValue(item)
+                                                cell.cellStyle = cellStyle
+                                                arrayIndex++
+                                        }
+
+                                        sheet.setColumnWidth(0, 10 * 200)
+                                        sheet.setColumnWidth(1, 10 * 200)
+
+
+
+
+                                        for (event in mapEvents) {
+                                                var cellIndex: Int = 0
+                                                rowIndex++
+                                                row = sheet.createRow(rowIndex)
+                                                cell = row.createCell(cellIndex++)
+                                                cell.setCellValue(event.id.toString())
+
+                                                cell = row.createCell(cellIndex++)
+                                                cell.setCellValue(event.Usuario.nombre + " " + event.Usuario.apellido)
+
+                                                cell = row.createCell(cellIndex++)
+                                                cell.setCellValue(event.Usuario.email)
+
+                                                cell = row.createCell(cellIndex++)
+                                                cell.setCellValue(event.coordsx)
+
+                                                cell = row.createCell(cellIndex++)
+                                                cell.setCellValue(event.coordsy)
+
+                                                cell = row.createCell(cellIndex++)
+                                                cell.setCellValue(event.TipoEvento.nombre)
+
+                                                cell = row.createCell(cellIndex++)
+                                                cell.setCellValue(event.fechaEvento.toString())
+
+
+                                        }
+
+
+                                        val file: File = File(
+                                                activity?.getExternalFilesDir(null),
+                                                "$fileName.xls"
+                                        )
+                                        var outputStream: FileOutputStream? = null
+
+                                        try {
+                                                outputStream = FileOutputStream(file)
+                                                wb.write(outputStream)
+                                                //Toast.makeText(ApplicationProvider.getApplicationContext<Context>(), "OK", Toast.LENGTH_LONG).show()
+
+
+                                                activity?.runOnUiThread {
+                                                        customDialogue(requireActivity(),
+                                                                "Archivo Guardado en la ubicacion \n$file","success")
+                                                        popup.dismiss()
+                                                }
+
+
+                                        } catch (e: IOException) {
+                                                e.printStackTrace()
+                                                //Toast.makeText(ApplicationProvider.getApplicationContext<Context>(), "NO OK", Toast.LENGTH_LONG).show()
+
+                                                try {
+                                                        outputStream!!.close()
+                                                } catch (ex: IOException) {
+                                                        ex.printStackTrace()
+                                                }
+                                        }
+                                }else{
+                                        activity?.runOnUiThread {
+                                                customDialogue(requireActivity(),"Nombre de Archivo Vacio","error")
+                                        }
+                                }
+                        }
+                }
+
                 activity?.runOnUiThread{
                         currentMap.clear()
 
@@ -477,7 +579,7 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                 val client = OkHttpClient()
 
                 sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
-                Token = sharedPrefs.getString("token","token")
+                Token = sharedPrefs.getString("token", "token")
 
 
                 var request = Request.Builder().url(url).header(
@@ -512,6 +614,17 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                         }
                 })
         }
+
+
+        override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
+                super.onActivityResult(requestCode, resultCode, intent)
+                if (requestCode == 2 && resultCode == Activity.RESULT_OK) {
+                        val folderLocation = intent?.extras?.getString("data")
+                        println("before location")
+                        println(folderLocation)
+                }
+        }
+
 }
 
 

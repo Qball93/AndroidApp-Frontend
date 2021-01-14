@@ -29,7 +29,7 @@ class UsersListAdapter(private val userList: MutableList<User>, private val cont
     
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CustomViewHolder {
-        val layoutInflater = LayoutInflater.from(parent?.context)
+        val layoutInflater = LayoutInflater.from(parent.context)
         val cellForRow = layoutInflater.inflate(R.layout.user_card_row,parent, false )
         setList(userList)
         return CustomViewHolder(cellForRow)
@@ -168,7 +168,7 @@ class UsersListAdapter(private val userList: MutableList<User>, private val cont
         this.activContext = ParentActivity
     }
 
-    fun updateUser(email: String, password: String, nombre: String, admin: Boolean, active: Boolean,
+  /*  fun updateUser(email: String, password: String, nombre: String, admin: Boolean, active: Boolean,
                    telefono: String, apellido: String, userId: Int, mainView: View, positon: Int, then: ((User) -> Unit)) {
         var url: String = activContext.getString(R.string.backEndHost) +"usuarios/update/" + userId + "/"
         val client = OkHttpClient()
@@ -220,7 +220,7 @@ class UsersListAdapter(private val userList: MutableList<User>, private val cont
             }
         })
 
-    }
+    }*/
 
 
     fun addItem(item: User) {
