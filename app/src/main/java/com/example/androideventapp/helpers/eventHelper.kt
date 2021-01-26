@@ -90,6 +90,8 @@ fun createEvent(context: Context, latitude: String, longitude: String, eventType
 
                 val body = response.body!!.string()
 
+                then("success")
+
 
 
             }
@@ -101,7 +103,7 @@ fun createEvent(context: Context, latitude: String, longitude: String, eventType
 
 }
 
-fun changeTypeStatus(context: Context,id: Int, status: String, then: ((String) -> Unit)){
+fun changeTypeStatus(context: Context,id: Int, status: String, then: ((EventType) -> Unit)){
 
 
 
@@ -133,16 +135,22 @@ fun changeTypeStatus(context: Context,id: Int, status: String, then: ((String) -
                 val body = response.body!!.string()
 
 
+                val gson = GsonBuilder().create()
 
-                then("success")
+                val newType = gson.fromJson(
+                    body,
+                    EventType::class.java
+                )
+
+                then(newType)
 
             }
         }
     })
 }
 
-fun createNewType(context: Context, color: String, name: String, then: ((String) -> Unit)){
-    var url: String = context.getString(R.string.backEndHost) + "events/tiposEvents/"
+fun createNewType(context: Context, color: String, name: String, then: ((EventType) -> Unit)){
+    var url: String = context.getString(R.string.backEndHost) + "events/tiposEvent/"
 
 
     val client = OkHttpClient()
@@ -158,7 +166,7 @@ fun createNewType(context: Context, color: String, name: String, then: ((String)
     var request = Request.Builder().url(url).header(
         "Authorization",
         token
-    ).patch(body).build()
+    ).post(body).build()
 
 
     client.newCall(request).enqueue(object : Callback {
@@ -172,8 +180,52 @@ fun createNewType(context: Context, color: String, name: String, then: ((String)
 
                 val body = response.body!!.string()
 
+                val gson = GsonBuilder().create()
 
-                then("success")
+                val newType = gson.fromJson(
+                    body,
+                    EventType::class.java
+                )
+
+                then(newType)
+
+
+            }
+        }
+    })
+}
+
+fun eventDelete(context: Context,id: Int, then: ((String) -> Unit)){
+
+    var url: String = context.getString(R.string.backEndHost) + "events/deleteEvent/"+id
+
+
+    val client = OkHttpClient()
+    var sharedPrefs : SharedPreferences = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
+    var token: String = sharedPrefs.getString("token","token")
+
+
+
+
+    var request = Request.Builder().url(url).header(
+        "Authorization",
+        token
+    ).delete().build()
+
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            e.printStackTrace()
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            response.use {
+                println(response)
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                if(response.code == 204){
+                    then("Evento eliminado con exito")
+                }
 
             }
         }

@@ -1,22 +1,25 @@
 package com.example.androideventapp.fragments;
 
+import android.Manifest
 import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.icu.text.DateFormat
 import android.icu.text.SimpleDateFormat
+import android.media.MediaScannerConnection
 import android.os.Bundle
-import android.util.Log
+import android.os.Environment
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import com.example.androideventapp.CustomInfoWindowForGoogleMap
 import com.example.androideventapp.R
 import com.example.androideventapp.helpers.*
 import com.example.androideventapp.models.Event
@@ -30,8 +33,8 @@ import kotlinx.android.synthetic.*
 import kotlinx.android.synthetic.main.event_export_window.*
 import kotlinx.android.synthetic.main.event_filter_window.*
 import kotlinx.android.synthetic.main.event_management_fragment.*
+import kotlinx.android.synthetic.main.event_update_window.view.*
 import kotlinx.android.synthetic.main.user_list_fragment.*
-import lib.folderpicker.FolderPicker
 import okhttp3.*
 import org.apache.poi.hssf.usermodel.HSSFCellStyle
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
@@ -46,18 +49,21 @@ import java.io.IOException
 import java.util.*
 
 
-class EventManagementFragment: Fragment(), OnMapReadyCallback {
+class  EventManagementFragment: Fragment(), OnMapReadyCallback {
 
         private lateinit var mMap: GoogleMap
         private lateinit var sharedPrefs: SharedPreferences
         private lateinit var Token: String
+        val RequestPermissionCode = 1
+
+
 
 
         override fun onActivityCreated(savedInstanceState: Bundle?){
                 super.onActivityCreated(savedInstanceState)
 
                 sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
-                Token = "Token " + sharedPrefs.getString("token", "")
+                Token = sharedPrefs.getString("token", "token")
 
 
                 map_view.onCreate(savedInstanceState)
@@ -74,7 +80,7 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
                 super.onViewCreated(view, savedInstanceState)
 
-                fetchTypes(requireActivity(),null) { Tipos ->
+                fetchTypes(requireActivity(), null) { Tipos ->
                         fetchSimpleUserList { Usuarios ->
                                 Usuarios.add(0, SimpleUser(null, "N/A", ""))
 
@@ -309,7 +315,9 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                                                         userId
                                                 ) { Eventos ->
 
-
+                                                        activity?.runOnUiThread {
+                                                                popup.dismiss()
+                                                        }
                                                         createMarkers(Eventos, mMap)
 
                                                 }
@@ -356,21 +364,71 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
 
                         createMarkers(Eventos, mMap)
                         activity?.runOnUiThread {
-                                mMap.setInfoWindowAdapter(
+                                /*mMap.setInfoWindowAdapter(
                                         CustomInfoWindowForGoogleMap(requireActivity())
 
-                                )
+                                )*/
+
+                                mMap.setOnMarkerClickListener() { currentMarker ->
+                                        var popupView: View = layoutInflater.inflate(
+                                                R.layout.event_update_window,
+                                                null
+                                        )
+
+
+                                        var width: Int = 900;
+                                        var height: Int = LinearLayout.LayoutParams.WRAP_CONTENT;
+                                        var focusable: Boolean = true;
+                                        var popup = PopupWindow(popupView, width, height, focusable)
+
+                                        popup.showAtLocation(view, Gravity.CENTER, 0, 100)
+
+                                        val viewName = popupView.findViewById<TextView>(R.id.userNameView)
+                                        val viewDate = popupView.findViewById<TextView>(R.id.dateView)
+                                        val viewType = popupView.findViewById<TextView>(R.id.typeView)
+                                        val viewLat = popupView.findViewById<TextView>(R.id.latView)
+                                        val viewLong = popupView.findViewById<TextView>(R.id.longView)
+
+                                        var currentEvent: Event = currentMarker.tag as Event
+
+                                        viewName.text = currentEvent.Usuario.nombre + " " + currentEvent.Usuario.apellido
+                                        viewDate.text = currentEvent.fechaEvento.toString()
+                                        viewType.text = currentEvent.TipoEvento.nombre
+                                        viewLat.text = currentEvent.coordsy.toString()
+                                        viewLong.text = currentEvent.coordsx.toString()
+
+                                        popupView.btDeleteEvent.setOnClickListener{
+
+                                                eventDelete(requireActivity(), currentEvent.id) {
+                                                        activity?.runOnUiThread {
+                                                                currentMarker.remove()
+                                                                popup.dismiss()
+                                                                customDialogue(
+                                                                        requireActivity(),
+                                                                        it,
+                                                                        "success"
+                                                                )
+
+
+                                                        }
+                                                }
+
+                                        }
+
+                                        return@setOnMarkerClickListener true
+
+                                }
                         }
                 }
         }
 
         fun fetchEventJson(
-        startDate: String?,
-        endDate: String?,
-        TipoEvento: String?,
-        userId: String?,
-        then: ((MutableList<Event>) -> Unit)
-){
+                startDate: String?,
+                endDate: String?,
+                TipoEvento: String?,
+                userId: String?,
+                then: ((MutableList<Event>) -> Unit)
+        ){
 
                 var url: String = getString(R.string.backEndHost) + "events/filteredEvents/?"+startDate+endDate+TipoEvento+userId
                 val client = OkHttpClient()
@@ -416,123 +474,162 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
         fun createMarkers(mapEvents: MutableList<Event>, currentMap: GoogleMap){
 
                 excelButton.setOnClickListener {
-                        var popupView: View = layoutInflater.inflate(
-                                R.layout.event_export_window,
-                                null
-                        )
 
 
-                        var width: Int = 900;
-                        var height: Int = LinearLayout.LayoutParams.WRAP_CONTENT;
-                        var focusable: Boolean = true;
-                        var popup = PopupWindow(popupView, width, height, focusable)
+                        // Here, thisActivity is the current activity
+                        if (ActivityCompat.checkSelfPermission(
+                                        requireActivity(),
+                                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                )
+                                != PackageManager.PERMISSION_GRANTED) {
+                                        println("not granted")
 
-                        popup.showAtLocation(view, Gravity.CENTER, 0, 100)
+                                        requestPermission()
+                        } else {
+                                // Permission has already been granted
+                                var popupView: View = layoutInflater.inflate(
+                                        R.layout.event_export_window,
+                                        null
+                                )
 
-
-
-
-
-                        popupView.findViewById<Button>(R.id.btExport).setOnClickListener {
-
-                                var fileName: String = popupView.findViewById<EditText>(R.id.editTextTextPersonName).text.toString()
-
-                                if(fileName != "") {
-                                        val wb: Workbook = HSSFWorkbook()
-                                        var arrayIndex: Int = 0
-                                        var rowIndex: Int = 0
+                                println("granted")
 
 
-                                        var cell: Cell? = null
+                                var width: Int = 900;
+                                var height: Int = LinearLayout.LayoutParams.WRAP_CONTENT;
+                                var focusable: Boolean = true;
+                                var popup = PopupWindow(popupView, width, height, focusable)
 
-                                        val cellStyle = wb.createCellStyle()
-                                        cellStyle.fillForegroundColor = HSSFColor.LIGHT_BLUE.index
-                                        cellStyle.fillPattern = HSSFCellStyle.SOLID_FOREGROUND
-                                        var sheet: Sheet? = null
-                                        sheet = wb.createSheet("Lista de Eventos")
-                                        var row: Row = sheet.createRow(rowIndex)
-
-                                        val res: Resources = getResources()
-                                        val list: Array<String> =
-                                                res.getStringArray(R.array.Headers)
-
-                                        for (item in list) {
-                                                cell = row.createCell(arrayIndex)
-                                                cell.setCellValue(item)
-                                                cell.cellStyle = cellStyle
-                                                arrayIndex++
-                                        }
-
-                                        sheet.setColumnWidth(0, 10 * 200)
-                                        sheet.setColumnWidth(1, 10 * 200)
+                                popup.showAtLocation(view, Gravity.CENTER, 0, 100)
 
 
 
 
-                                        for (event in mapEvents) {
-                                                var cellIndex: Int = 0
-                                                rowIndex++
-                                                row = sheet.createRow(rowIndex)
-                                                cell = row.createCell(cellIndex++)
-                                                cell.setCellValue(event.id.toString())
 
-                                                cell = row.createCell(cellIndex++)
-                                                cell.setCellValue(event.Usuario.nombre + " " + event.Usuario.apellido)
+                                popupView.findViewById<Button>(R.id.btExport).setOnClickListener {
 
-                                                cell = row.createCell(cellIndex++)
-                                                cell.setCellValue(event.Usuario.email)
+                                        var fileName: String = popupView.findViewById<EditText>(R.id.editTextTextPersonName).text.toString()
 
-                                                cell = row.createCell(cellIndex++)
-                                                cell.setCellValue(event.coordsx)
+                                        val mDir = Environment.DIRECTORY_DOCUMENTS
+                                        val mPath =
+                                                Environment.getExternalStoragePublicDirectory(mDir)
 
-                                                cell = row.createCell(cellIndex++)
-                                                cell.setCellValue(event.coordsy)
+                                        if(fileName != "") {
 
-                                                cell = row.createCell(cellIndex++)
-                                                cell.setCellValue(event.TipoEvento.nombre)
+                                               /*val root: File = File(
+                                                        Environment.getExternalStorageDirectory(),
+                                                        fileName
+                                                )
+                                                if (!root.exists()) {
+                                                        root.mkdirs()
+                                                }*/
 
-                                                cell = row.createCell(cellIndex++)
-                                                cell.setCellValue(event.fechaEvento.toString())
+                                                val wb: Workbook = HSSFWorkbook()
+                                                var arrayIndex: Int = 0
+                                                var rowIndex: Int = 0
 
 
-                                        }
+                                                var cell: Cell? = null
+
+                                                val cellStyle = wb.createCellStyle()
+                                                cellStyle.fillForegroundColor = HSSFColor.LIGHT_BLUE.index
+                                                cellStyle.fillPattern = HSSFCellStyle.SOLID_FOREGROUND
+                                                var sheet: Sheet? = null
+                                                sheet = wb.createSheet("Lista de Eventos")
+                                                var row: Row = sheet.createRow(rowIndex)
+
+                                                val res: Resources = getResources()
+                                                val list: Array<String> =
+                                                        res.getStringArray(R.array.Headers)
+
+                                                for (item in list) {
+                                                        cell = row.createCell(arrayIndex)
+                                                        cell.setCellValue(item)
+                                                        cell.cellStyle = cellStyle
+                                                        arrayIndex++
+                                                }
+
+                                                sheet.setColumnWidth(0, 10 * 200)
+                                                sheet.setColumnWidth(1, 10 * 200)
 
 
-                                        val file: File = File(
-                                                activity?.getExternalFilesDir(null),
-                                                "$fileName.xls"
-                                        )
-                                        var outputStream: FileOutputStream? = null
-
-                                        try {
-                                                outputStream = FileOutputStream(file)
-                                                wb.write(outputStream)
-                                                //Toast.makeText(ApplicationProvider.getApplicationContext<Context>(), "OK", Toast.LENGTH_LONG).show()
 
 
-                                                activity?.runOnUiThread {
-                                                        customDialogue(requireActivity(),
-                                                                "Archivo Guardado en la ubicacion \n$file","success")
-                                                        popup.dismiss()
+                                                for (event in mapEvents) {
+                                                        var cellIndex: Int = 0
+                                                        rowIndex++
+                                                        row = sheet.createRow(rowIndex)
+                                                        cell = row.createCell(cellIndex++)
+                                                        cell.setCellValue(event.id.toString())
+
+                                                        cell = row.createCell(cellIndex++)
+                                                        cell.setCellValue(event.Usuario.nombre + " " + event.Usuario.apellido)
+
+                                                        cell = row.createCell(cellIndex++)
+                                                        cell.setCellValue(event.Usuario.email)
+
+                                                        cell = row.createCell(cellIndex++)
+                                                        cell.setCellValue(event.coordsx)
+
+                                                        cell = row.createCell(cellIndex++)
+                                                        cell.setCellValue(event.coordsy)
+
+                                                        cell = row.createCell(cellIndex++)
+                                                        cell.setCellValue(event.TipoEvento.nombre)
+
+                                                        cell = row.createCell(cellIndex++)
+                                                        cell.setCellValue(event.fechaEvento.toString())
+
+
                                                 }
 
 
-                                        } catch (e: IOException) {
-                                                e.printStackTrace()
-                                                //Toast.makeText(ApplicationProvider.getApplicationContext<Context>(), "NO OK", Toast.LENGTH_LONG).show()
+                                                val file: File = File(
+                                                        mPath,
+                                                        "$fileName.xls"
+                                                )
+                                                var outputStream: FileOutputStream? = null
 
                                                 try {
-                                                        outputStream!!.close()
-                                                } catch (ex: IOException) {
-                                                        ex.printStackTrace()
+                                                        outputStream = FileOutputStream(file)
+                                                        wb.write(outputStream)
+                                                        //Toast.makeText(ApplicationProvider.getApplicationContext<Context>(), "OK", Toast.LENGTH_LONG).show()
+
+
+                                                        activity?.runOnUiThread {
+                                                                customDialogue(
+                                                                        requireActivity(),
+                                                                        "Archivo Guardado en la ubicacion \n$file",
+                                                                        "success"
+                                                                )
+
+                                                                scanFile(requireActivity(),file,"application/vnd.ms-excel")
+                                                                popup.dismiss()
+                                                        }
+
+
+                                                } catch (e: IOException) {
+                                                        e.printStackTrace()
+                                                        //Toast.makeText(ApplicationProvider.getApplicationContext<Context>(), "NO OK", Toast.LENGTH_LONG).show()
+
+                                                        try {
+                                                                outputStream!!.close()
+                                                        } catch (ex: IOException) {
+                                                                ex.printStackTrace()
+                                                        }
                                                 }
-                                        }
-                                }else{
-                                        activity?.runOnUiThread {
-                                                customDialogue(requireActivity(),"Nombre de Archivo Vacio","error")
+                                        }else{
+                                                activity?.runOnUiThread {
+                                                        customDialogue(
+                                                                requireActivity(),
+                                                                "Nombre de Archivo Vacio",
+                                                                "error"
+                                                        )
+                                                }
                                         }
                                 }
                         }
+
                 }
 
                 activity?.runOnUiThread{
@@ -572,6 +669,14 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                 val calendar = Calendar.getInstance()
                 calendar.set(year, month, dayOfMonth)
                 return calendar.time
+        }
+
+        private fun requestPermission() {
+                ActivityCompat.requestPermissions(
+                        requireActivity(),
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        RequestPermissionCode
+                )
         }
 
         fun fetchSimpleUserList(then: ((MutableList<SimpleUser>) -> Unit)){
@@ -623,6 +728,10 @@ class EventManagementFragment: Fragment(), OnMapReadyCallback {
                         println("before location")
                         println(folderLocation)
                 }
+        }
+
+        fun scanFile(ctxt: Context, f: File, mimeType: String) {
+                MediaScannerConnection.scanFile(ctxt, arrayOf(f.getAbsolutePath()), arrayOf(mimeType), null)
         }
 
 }

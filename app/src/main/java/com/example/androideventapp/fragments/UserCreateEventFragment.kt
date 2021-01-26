@@ -4,12 +4,14 @@ import android.Manifest
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
+import android.content.Context.LOCATION_SERVICE
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Looper
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
@@ -17,25 +19,30 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Spinner
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.example.androideventapp.R
 import com.example.androideventapp.helpers.createEvent
 import com.example.androideventapp.helpers.customDialogue
 import com.example.androideventapp.helpers.fetchTypes
 import com.example.androideventapp.models.EventType
-import com.example.androideventapp.models.SimpleUser
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.event_reporting_fragment.*
+
 
 class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
 
 
     private lateinit var mMap: GoogleMap
     private lateinit var locationRequest: LocationRequest
+    private lateinit var locationManager: LocationManager
     val RequestPermissionCode = 1
     var mLocation: Location? = null
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -76,7 +83,7 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        fetchTypes(requireActivity(),"true"){ tipos->
+        fetchTypes(requireActivity(), "true"){ tipos->
 
             activity?.runOnUiThread {
                 val mySpinner: Spinner = activity?.findViewById<Spinner>(R.id.spinner)!!
@@ -95,12 +102,18 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
 
                 btReport.setOnClickListener {
 
-
-                    createEvent(requireActivity(),latitude,longitude,tipos[mySpinner.selectedItemPosition].id){
+                    createEvent(
+                        requireActivity(),
+                        latitude,
+                        longitude,
+                        tipos[mySpinner.selectedItemPosition].id
+                    ){
 
 
                         requireActivity().runOnUiThread {
-                            customDialogue(requireActivity(),"Evento Creado con Exito", "success") }
+                            println("success!!!!!!")
+                            customDialogue(requireActivity(), "Evento Creado con Exito", "success")
+                        }
                     }
 
                 }
@@ -110,7 +123,10 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
 
     }
 
-    fun getLastLocation(currentMap : GoogleMap) {
+    fun getLastLocation(currentMap: GoogleMap) {
+
+
+
 
         if (ActivityCompat.checkSelfPermission(
                 requireActivity(),
@@ -118,7 +134,10 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             requestPermission()
+            getLastLocation(currentMap)
         } else {
+
+
             fusedLocationProviderClient.lastLocation
                 .addOnSuccessListener { location: Location? ->
                     mLocation = location
@@ -128,15 +147,15 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
                         longitude = location.longitude.toString()
 
                         currentMap.clear()
-                        println("this is longitude"+longitude+ "and this is latitude"  + latitude)
+                        println("this is longitude" + longitude + "and this is latitude" + latitude)
 
                         val boundingBox = LatLngBounds(
-                            LatLng((latitude.toDouble()-0.4), longitude.toDouble()-0.4),
-                            LatLng(latitude.toDouble()+0.4,longitude.toDouble()+0.4)
+                            LatLng((latitude.toDouble() - 0.4), longitude.toDouble() - 0.4),
+                            LatLng(latitude.toDouble() + 0.4, longitude.toDouble() + 0.4)
                         )
 
                         currentMap.apply {
-                            val location = LatLng(latitude.toDouble(),longitude.toDouble())
+                            val location = LatLng(latitude.toDouble(), longitude.toDouble())
 
                             mMap.addMarker(
                                 MarkerOptions().position(location)
@@ -151,8 +170,36 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
                         currentMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundingBox, 0))
 
 
+                    }else{
+                        println("location is null")
+                        var locationRequest =  LocationRequest()
+                        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+                        locationRequest.interval = 0
+                        locationRequest.fastestInterval = 0
+                        locationRequest.numUpdates = 1
+                        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+                        fusedLocationProviderClient!!.requestLocationUpdates(
+                            locationRequest,locationCallback, Looper.myLooper()
+                        )
+
+
                     }
                 }
+
+
+
+        }
+    }
+
+    private val locationCallback = object : LocationCallback(){
+        override fun onLocationResult(locationResult: LocationResult) {
+            mLocation = locationResult.lastLocation
+
+            /*println("callback")
+            println(mLocation)*/
+
+            getLastLocation(mMap)
+
         }
     }
 
@@ -163,6 +210,19 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
             RequestPermissionCode
         )
     }
+
+    /*fun newLocationData(){
+        var locationRequest =  LocationRequest()
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        locationRequest.interval = 0
+        locationRequest.fastestInterval = 0
+        locationRequest.numUpdates = 1
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        fusedLocationProviderClient!!.requestLocationUpdates(
+            locationRequest,locationCallback,Looper.myLooper()
+        )
+
+    }*/
 
     override fun onMapReady(map: GoogleMap) {
 
@@ -191,7 +251,11 @@ class UserCreateEventFragment: Fragment(), OnMapReadyCallback {
                 alertDialog.show()
             }else{
 
-                fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+
+                fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
+                    requireActivity()
+                )
                 getLastLocation(mMap)
             }
 

@@ -10,10 +10,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.example.androideventapp.fragments.AdminConfigFragment
 import com.example.androideventapp.fragments.EventManagementFragment
-import com.example.androideventapp.fragments.NewUserFragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.admin_main.*
-import kotlinx.android.synthetic.main.user_main.*
 
 class AdminMenu : AppCompatActivity(){
 

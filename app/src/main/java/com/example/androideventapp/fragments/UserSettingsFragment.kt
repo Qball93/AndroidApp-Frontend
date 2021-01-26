@@ -86,9 +86,12 @@ class UserSettingsFragment(): Fragment() {
                 validateNoEmptySpaces(nombre) and
                 validateNoEmptySpaces(apellido)
             ){
-                this.activity?.let { it1 -> updateUserGeneralInfo(it1,email.text.toString(),phone.text.toString(),
+                this.activity?.let { it1 -> updateUserGeneralInfo(it1,email.text.toString(),"+"+phone.text.toString(),
                 nombre.text.toString(),apellido.text.toString()){
                     setMenu(it)
+                    requireActivity().runOnUiThread { customDialogue(requireActivity(),"Datos Actualizados","success") }
+
+
                 } }
             }
         }
@@ -103,7 +106,7 @@ class UserSettingsFragment(): Fragment() {
 
             activity?.findViewById<EditText>(R.id.userConfigNameText)!!.setText(updateUser.nombre)
             activity?.findViewById<EditText>(R.id.userConfigApellidoText)!!.setText(updateUser.apellido)
-            activity?.findViewById<EditText>(R.id.userConfigPhoneTexxt)!!.setText(updateUser.telefono)
+            activity?.findViewById<EditText>(R.id.userConfigPhoneTexxt)!!.setText(updateUser.telefono.drop(1))
             activity?.findViewById<EditText>(R.id.userConfigemailText)!!.setText(updateUser.email)
         }
 

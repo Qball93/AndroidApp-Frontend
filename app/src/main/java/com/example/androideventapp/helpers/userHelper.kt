@@ -69,8 +69,7 @@ import java.io.IOException
             .header(
                 "Authorization",
                 token
-            )
-            .patch(body).build()
+            ).patch(body).build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -98,6 +97,8 @@ import java.io.IOException
         val client = OkHttpClient()
         var sharedPrefs : SharedPreferences = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
         var token: String = sharedPrefs.getString("token","token")
+
+
 
 
         var body: RequestBody = FormBody.Builder()

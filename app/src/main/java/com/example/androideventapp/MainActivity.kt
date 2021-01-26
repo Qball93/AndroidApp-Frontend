@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
                         val preferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
                         preferences.edit().putString("token", "Token " + new.get("token").toString()).apply()
                         preferences.edit().putString("admin",new.get("admin").toString()).apply()
+                        preferences.edit().putString("emailAdmin", new.get("email").toString()).apply()
 
                         if(new.get("admin").toString().toBoolean()){
                             runOnUiThread{

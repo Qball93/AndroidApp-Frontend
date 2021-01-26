@@ -73,28 +73,28 @@ class UserListFragment : Fragment() {
                 var editPhone: EditText = popupView.findViewById<EditText>(R.id.editTextTelephone)
                 var editNombre: EditText = popupView.findViewById<EditText>(R.id.editTextNombre)
                 var editApellido: EditText = popupView.findViewById<EditText>(R.id.editTextApellido)
-                var editPassword: EditText =
-                    popupView.findViewById<EditText>(R.id.editTextPassword1)
-                var editPassword2: EditText =
-                    popupView.findViewById<EditText>(R.id.editTextPassword2)
+                var editPassword: EditText = popupView.findViewById<EditText>(R.id.editTextPassword1)
+
+
+
 
                 if (validateEmail(editEmail) and
                     validatePhone(editPhone) and
                     validateNoEmptySpaces(editNombre) and
                     validateNoEmptySpaces(editApellido) and
-                    validateIsEmpty(editPassword) and
-                    validateIsEmpty(editPassword2)
+                    validateIsEmpty(editPassword)
                 ) {
-                    if (editPassword.text.toString() != editPassword2.text.toString()) {
 
-                        customDialogue(activity!!, "Contrasenas no son iguales", "alert")
-
-                    } else {
 
                         var url: String = getString(R.string.backEndHost) + "usuarios/create/"
                         val client = OkHttpClient()
                         val myString: String
 
+                        println("updated")
+                        sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return@setOnClickListener
+                        Token = sharedPrefs.getString("token", "token")
+
+                        
                         var body: RequestBody = FormBody.Builder()
                             .add("email", editEmail.text.toString())
                             .add("telefono", "+" + editPhone.text.toString())
@@ -105,12 +105,13 @@ class UserListFragment : Fragment() {
                             )
                             .add("password", editPassword.text.toString())
                             .add("nombre", editNombre.text.toString())
+                            .add("is_active","true")
                             .build()
 
                         var request = Request.Builder().url(url)
                             .header(
                                 "Authorization",
-                                getString(R.string.Token)
+                                Token
                             )
                             .post(body).build()
 
@@ -156,6 +157,7 @@ class UserListFragment : Fragment() {
                                     }
                                     else if (new.has("detail")) {
 
+
                                         activity?.runOnUiThread {
 
                                             customDialogue(
@@ -184,7 +186,7 @@ class UserListFragment : Fragment() {
                                 }
                             }
                         })
-                    }
+
                 }
             }
 
@@ -205,8 +207,10 @@ class UserListFragment : Fragment() {
         val myString: String
         //Token for testing purposes
         sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
-        Token = "Token " + sharedPrefs.getString("token","token")
-        var request = Request.Builder().url(url).header("Authorization",getString(R.string.Token)).build()
+        Token = sharedPrefs.getString("token","token")
+
+
+        var request = Request.Builder().url(url).header("Authorization",Token).build()
 
 
         client.newCall(request).enqueue(object : Callback {
@@ -232,7 +236,10 @@ class UserListFragment : Fragment() {
 
                         usersRecyclerView.adapter = UsersListAdapter(Usuarios, this@UserListFragment , object : UsersListAdapter.ItemClickListener{
                             override fun itemClick(user: User, position: Int) {
-                                var currentUserEmail :String = "testemail@email.com"
+                                sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
+
+                                println(user)
+                                var currentUserEmail :String = sharedPrefs.getString("emailAdmin","emailAdmin")
 
                                 var popupView: View = layoutInflater.inflate(R.layout.create_user_window, null)
 
@@ -256,21 +263,20 @@ class UserListFragment : Fragment() {
                                 editEmail.setText(user.email)
 
                                 var editPhone: EditText = popupView.findViewById<EditText>(R.id.editTextTelephone)
-                                editPhone.setText(user.telefono)
+                                editPhone.setText(user.telefono.drop(1))
 
                                 var editPassword: EditText = popupView.findViewById<EditText>(R.id.editTextPassword1)
                                 editPassword.setText("samepassiuj")
 
-                                var editPassword2: EditText = popupView.findViewById<EditText>(R.id.editTextPassword2)
-                                editPassword2.setText("samepassiuj")
+
 
                                 var adminCheck : CheckBox = popupView.findViewById<CheckBox>(R.id.adminBox)
                                 var activeCheck : CheckBox = popupView.findViewById<CheckBox>(R.id.is_active)
+                                activeCheck.isChecked = user.is_active
+                                adminCheck.isChecked = user.is_admin
 
                                 if(user.email == currentUserEmail){
-                                    adminCheck.isChecked = true
                                     adminCheck.isClickable = false
-                                    activeCheck.isChecked = true
                                     activeCheck.isClickable = false
                                 }
 
@@ -279,13 +285,9 @@ class UserListFragment : Fragment() {
                                         validatePhone(editPhone) and
                                         validateNoEmptySpaces(editNombre) and
                                         validateNoEmptySpaces(editApellido) and
-                                        validateIsEmpty(editPassword) and
-                                        validateIsEmpty(editPassword2)
+                                        validateIsEmpty(editPassword)
                                     ) {
-                                        if (editPassword.text.toString() != editPassword2.text.toString()) {
-                                            customDialogue(activity!!, "Contrasenas no son iguales", "alert")
-                                        }else{
-                                            updateUser(editEmail.text.toString(),editPassword.text.toString(),editNombre.text.toString(),adminCheck.isChecked,
+                                       updateUser(editEmail.text.toString(),editPassword.text.toString(),editNombre.text.toString(),adminCheck.isChecked,
                                                 activeCheck.isChecked, editPhone.text.toString(), editApellido.text.toString(),user.id, popupView, position){
                                                     res ->     (usersRecyclerView.adapter as UsersListAdapter).replaceItem(res,updatePosition)
                                                 activity?.runOnUiThread{
@@ -294,12 +296,8 @@ class UserListFragment : Fragment() {
                                                     customDialogue(activity!!,"Usuario Editado","success")
                                                     (usersRecyclerView.adapter as UsersListAdapter).notifyItemChanged(updatePosition)
                                                 }
+                                       }
 
-
-                                            }
-
-
-                                        }
                                     }
                                 }
                             }
@@ -316,6 +314,7 @@ class UserListFragment : Fragment() {
                     }
 
                 }
+
             }
         })
 
@@ -324,11 +323,11 @@ class UserListFragment : Fragment() {
     fun updateUser(email: String, password: String, nombre: String, admin: Boolean, active: Boolean,
                    telefono: String, apellido: String, userId: Int, mainView: View, position: Int, then: ((User) -> Unit)) {
 
-        var url: String = activity!!.getString(R.string.backEndHost) +"usuarios/update/" + userId + "/"
+        var url: String = requireActivity().getString(R.string.backEndHost) +"usuarios/update/" + userId + "/"
         val client = OkHttpClient()
 
         sharedPrefs = activity?.getSharedPreferences("myPrefs", Context.MODE_PRIVATE) ?: return
-        Token = "Token " + sharedPrefs.getString("token","token")
+        Token = sharedPrefs.getString("token","token")
 
 
         updatePosition = position
@@ -341,7 +340,7 @@ class UserListFragment : Fragment() {
             .add("is_active",active.toString())
             .add("nombre",nombre)
 
-        if(password != activity!!.getString(R.string.noChangePass)){
+        if(password != requireActivity().getString(R.string.noChangePass)){
             myBuilder.add("password",password)
         }
 

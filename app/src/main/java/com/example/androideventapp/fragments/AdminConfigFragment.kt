@@ -54,50 +54,63 @@ class AdminConfigFragment: Fragment() {
                     val inactiveSpinner: Spinner? = activity?.findViewById<Spinner>(R.id.InactiveTypeSpinner)
                     val colorSpinner: Spinner? = activity?.findViewById<Spinner>(R.id.colorSpinner)
 
-                    val spinnerAdapter3 : ArrayAdapter<String> = ArrayAdapter<String>(
+                    val colorAdapter : ArrayAdapter<String> = ArrayAdapter<String>(
                         this.context,android.R.layout.simple_spinner_item,
                         colorName
                     )
 
-                    val spinnerAdapter : ArrayAdapter<EventType> = ArrayAdapter<EventType>(
+                    val activeAdapter : ArrayAdapter<EventType> = ArrayAdapter<EventType>(
                         this.context,
                         android.R.layout.simple_spinner_item,
                         activeTypes
                     )
-                    spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    activeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
-                    val spinnerAdapter2 : ArrayAdapter<EventType> = ArrayAdapter<EventType>(
+                    val inactiveAdapter : ArrayAdapter<EventType> = ArrayAdapter<EventType>(
                         this.context,
                         android.R.layout.simple_spinner_item,
                         inActiveTypes
                     )
-                    spinnerAdapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    inactiveAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
-                    spinnerAdapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    colorAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
                     if (colorSpinner != null) {
-                        colorSpinner.adapter = spinnerAdapter3
+                        colorSpinner.adapter = colorAdapter
                     }
                     if (activeSpinner != null) {
-                        activeSpinner.adapter = spinnerAdapter
+                        activeSpinner.adapter = activeAdapter
                     }
                     if (inactiveSpinner != null) {
-                        inactiveSpinner.adapter = spinnerAdapter2
+                        inactiveSpinner.adapter = inactiveAdapter
                     }
 
                     btActivate.setOnClickListener {
 
                         if (inactiveSpinner != null) {
                             changeTypeStatus(requireActivity(),inActiveTypes[inactiveSpinner.selectedItemPosition].id,"true"){
-                                customDialogue(requireActivity(),"Status Actualizado",it)
+                                requireActivity().runOnUiThread {
+                                    inActiveTypes.removeAt(inactiveSpinner.selectedItemPosition)
+                                    activeTypes.add(it)
+                                    customDialogue(requireActivity(),"Status Actualizado","success")
+                                    inactiveAdapter.notifyDataSetChanged()
+                                    activeAdapter.notifyDataSetChanged()
+                                }
                             }
                         }
                     }
 
                     btDeactivate.setOnClickListener {
                         if (activeSpinner != null) {
-                            changeTypeStatus(requireActivity(),inActiveTypes[activeSpinner.selectedItemPosition].id,"false"){
-                                customDialogue(requireActivity(),"Status Actualizado",it)
+
+                            changeTypeStatus(requireActivity(),activeTypes[activeSpinner.selectedItemPosition].id,"false"){
+                                requireActivity().runOnUiThread {
+                                    activeTypes.removeAt(activeSpinner.selectedItemPosition)
+                                    inActiveTypes.add(it)
+                                    customDialogue(requireActivity(), "Status Actualizado", "success")
+                                    inactiveAdapter.notifyDataSetChanged()
+                                    activeAdapter.notifyDataSetChanged()
+                                }
                             }
                         }
                     }
@@ -107,7 +120,13 @@ class AdminConfigFragment: Fragment() {
                         if(nameText.text.toString() != ""){
                             if (colorSpinner != null) {
                                 createNewType(requireActivity(),colorValue[colorSpinner.selectedItemPosition],nameText.text.toString()){
-                                    customDialogue(requireActivity(),"Tipo Creado","success")
+                                    requireActivity().runOnUiThread {
+                                        customDialogue(requireActivity(),"Tipo Creado","success")
+
+                                        activeTypes.add(it)
+                                        activeAdapter.notifyDataSetChanged()
+
+                                    }
                                 }
                             }
                         }else{
